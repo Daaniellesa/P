@@ -1,1 +1,56 @@
+##  Analise 1 ##
 
+
+  
+  vendas <- read.csv("vendas.csv")
+  cores_estat <- c("#A11D21", "#003366", "#CC9900", "#663333", "#FF6600", "#CC9966", "#999966", "#006606", "#008091", "#041835", "#666666")
+  theme_estat <- function(...) {
+    theme <- ggplot2::theme_bw() +
+      ggplot2::theme(
+        axis.title.y = ggplot2::element_text(colour = "black", size = 12),
+        axis.title.x = ggplot2::element_text(colour = "black", size = 12),
+        axis.text = ggplot2::element_text(colour = "black", size = 9.5),
+        panel.border = ggplot2::element_blank(),
+        axis.line = ggplot2::element_line(colour = "black"),
+        legend.position = "top",
+        ...
+      )
+    
+    return(
+      list(
+        theme,
+        scale_fill_manual(values = cores_estat),
+        scale_colour_manual(values = cores_estat)
+      )
+    )
+  }
+  
+  
+  questao1
+  
+  vendas1 <- vendas %>%
+    filter(!is.na(Price) & !is.na(Category))  
+ 
+   vendas1$Preço <- as.numeric(vendas1$Preço)
+ 
+   faturamento_anual <- vendas1 %>%
+    group_by(Categoria) %>%
+    summarise(Faturamento_Total = sum(Preço))
+  
+  faturamento <- faturamento_anual %>%
+    mutate(Prop = (Faturamento_Total / sum(Faturamento_Total)) * 100)
+  
+  faturamento$Prop <- round(faturamento$Prop, 2)
+  
+
+  faturamento$Posicao <- 1:nrow(faturamento)
+  print(faturamento)
+  ggplot(faturamento, aes(x = 1, y = Prop, fill = Categoria, label = paste0(Prop, "%"))) +
+    geom_bar(width = 1, stat = "identity") +
+    geom_text(aes(x = 1.8, label = paste0(Prop, "%")), position = position_stack(vjust = 0.5)) +
+    coord_polar(theta = "y") +
+    theme_void() +
+    theme(legend.position = "top") +
+    scale_fill_manual(values = cores_estat, name = 'categoria')
+  ggsave("setor.pdf", width = 158, height = 93, units = "mm")
+  
