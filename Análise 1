@@ -26,31 +26,17 @@
   }
   
   
-  questao1
-  
-  vendas1 <- vendas %>%
-    filter(!is.na(Price) & !is.na(Category))  
- 
-   vendas1$Preço <- as.numeric(vendas1$Preço)
- 
-   faturamento_anual <- vendas1 %>%
-    group_by(Categoria) %>%
-    summarise(Faturamento_Total = sum(Preço))
-  
-  faturamento <- faturamento_anual %>%
-    mutate(Prop = (Faturamento_Total / sum(Faturamento_Total)) * 100)
-  
-  faturamento$Prop <- round(faturamento$Prop, 2)
-  
+  grafico_de_linhas 
 
-  faturamento$Posicao <- 1:nrow(faturamento)
-  print(faturamento)
-  ggplot(faturamento, aes(x = 1, y = Prop, fill = Categoria, label = paste0(Prop, "%"))) +
-    geom_bar(width = 1, stat = "identity") +
-    geom_text(aes(x = 1.8, label = paste0(Prop, "%")), position = position_stack(vjust = 0.5)) +
-    coord_polar(theta = "y") +
-    theme_void() +
-    theme(legend.position = "top") +
-    scale_fill_manual(values = cores_estat, name = 'categoria')
-  ggsave("setor.pdf", width = 158, height = 93, units = "mm")
+
+  vendas1$Data.Venda <- as.Date(vendas1$Data.Venda, format = "%m/%d/%Y")  
+  vendas1$mes <- months(vendas1$Data.Venda)
+
   
+  ggplot(vendas1) +
+    aes(x = mes, y = Preço, group = Categoria, colour = Categoria) +
+    geom_line(linewidth = 1) +
+    geom_point(size = 2) +
+    scale_colour_manual(name = "Categoria", labels = c("Moda Infantil", "Moda Masculina", "Moda Feminina")) +
+    labs(x = "Mes", y = "Preço") +
+    theme_estat()
