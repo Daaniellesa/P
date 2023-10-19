@@ -26,17 +26,26 @@
   }
   
   
-  grafico_de_linhas 
+  vendas$Data.Venda <- as.Date(vendas$Data.Venda, format = "%m/%d/%Y")
+vendas$mes <- months(vendas$Data.Venda)
+vendas1 <- vendas %>%
+  filter(is.na(Motivo.devolução)) 
 
 
-  vendas1$Data.Venda <- as.Date(vendas1$Data.Venda, format = "%m/%d/%Y")  
-  vendas1$mes <- months(vendas1$Data.Venda)
+vendas1 <- vendas %>%
+  filter(!is.na(Price) & !is.na(Category) & !is.na(Data.Venda)) 
 
-  
-  ggplot(vendas1) +
-    aes(x = mes, y = Preço, group = Categoria, colour = Categoria) +
-    geom_line(linewidth = 1) +
-    geom_point(size = 2) +
-    scale_colour_manual(name = "Categoria", labels = c("Moda Infantil", "Moda Masculina", "Moda Feminina")) +
-    labs(x = "Mes", y = "Preço") +
-    theme_estat()
+
+faturamento <- vendas1 %>%
+  group_by(mes, Categoria) %>%
+  summarize(faturamento_mensal = sum(Preço))
+
+
+ggplot(faturamento) +
+  aes(x = mes, y = faturamento_mensal, group = Categoria, colour = Categoria) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_colour_manual(name = "Categoria", labels = c("Moda Infantil", "Moda Masculina", "Moda Feminina")) +
+  labs(x = "Mes", y = "Preço") +
+  theme_estat(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("series_grupo.pdf", width = 158, height = 93, units = "mm")
