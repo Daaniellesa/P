@@ -49,3 +49,191 @@ ggplot(faturamento) +
   labs(x = "Mes", y = "Preço") +
   theme_estat(axis.text.x = element_text(angle = 90, hjust = 1))
 ggsave("series_grupo.pdf", width = 158, height = 93, units = "mm")
+
+
+
+
+vendas <- read.csv("vendas.csv")
+library(tidyverse)
+vendas <- vendas %>%
+  rename(Cor = Color)
+            vendas <- vendas %>%
+                rename(Categoria = Category)
+             vendas <- vendas %>%
+                mutate(Categoria = ifelse(Categoria == "Kids' Fashion", "Moda infantil", Categoria))
+ View(vendas)
+           vendas <- vendas %>%
+                mutate(Categoria = ifelse(Categoria == "Men's Fashion", "Moda masculina", Categoria))
+           vendas <- vendas %>%
+                mutate(Categoria = ifelse(Categoria == "Women's Fashion", "Moda feminina", Categoria))
+          vendas <- vendas %>%
+                mutate(Cor = ifelse(Cor == "Red", "vermelho", Cor))
+          vendas <- vendas %>%
+            mutate(Cor = ifelse(Cor == "Blue", "azul", Cor))
+         vendas <- vendas %>%
+                mutate(Cor = ifelse(Cor == "Black", "preto", Cor))
+           vendas <- vendas %>%
+             mutate(Cor = ifelse(Cor == "White", "branco", Cor))
+          vendas <- vendas %>%
+                mutate(Cor = ifelse(Cor == "Yellow", "amarelo", Cor))
+          vendas <- vendas %>%
+            mutate(Cor = ifelse(Cor == "Green", "verde", Cor))
+
+          
+                
+          
+##Analise 3##
+
+venda5 <- vendas %>%
+  filter(Categoria %in% c("Moda feminina", "Moda masculina"))
+
+venda5 <- venda5 %>%
+  filter(!is.na(Categoria) & !is.na(Cor))
+
+porc <- venda5 %>%
+  mutate(Cor = case_when(
+    Cor %>% str_detect("branco") ~ "branco",
+    Cor %>% str_detect("preto") ~ "preto",
+    Cor %>% str_detect("amarelo") ~ "amarelo",
+    Cor %>% str_detect("azul") ~ "azul",
+    Cor %>% str_detect("verde") ~ "verde",
+    Cor %>% str_detect("vermelho") ~ "vermelho"
+  )) %>%
+  group_by(Cor, Categoria) %>%
+  summarise(freq = n()) %>%
+  mutate(freq_relativa = freq / sum(freq),
+         freq_relativa = scales::percent(freq_relativa
+  ))
+
+
+
+porcentagens <- str_c(porc$freq_relativa, "%") %>% str_replace("\\.", ",")
+legendas <- str_squish(str_c(porc$freq, " (", porcentagens, ")"))
+
+
+ggplot(porc) +
+  aes(
+    x = fct_reorder(Cor, freq, .desc = T), y = freq,
+    fill = Categoria, label = freq_relativa
+  ) +
+  geom_col(position = position_dodge2(preserve = "single", padding = 0)) +
+  geom_text(
+    position = position_dodge(width = .9),
+    vjust = -0.5, hjust = 0.5,
+    size = 2
+  ) +
+  labs(x = "Cor", y = "Frequência") +
+  theme_estat()
+ggsave("colunas-bi2-freq.pdf", width = 158, height = 93, units = "mm")
+
+
+
+##Analise 4##
+
+library(tidyverse)
+
+vendas <- vendas %>%
+  rename(Preço = Price)
+
+vendas <- vendas %>%
+  group_by(Avaliação, Preço) %>%
+  filter(!duplicated(Avaliação, Preço))
+
+limpos <- vendas %>%
+  filter(!is.na(Avaliação))
+limpos <- vendas %>%
+  filter(!is.na(Preço))
+limpos
+ggplot(limpos) +
+  aes(x = Preço, y = Avaliação) +
+  geom_point(colour = "#A11D21", size = 3) +
+  labs(
+    x = "Preço",
+    y = "Avaliação"
+  ) +
+  theme_estat()
+
+
+##Analise 5##
+
+vendas <- read.csv("vendas.csv")
+devolução <- read.csv("devolução_atualizado.csv")
+library(tidyverse)
+
+cores_estat <- c("#A11D21", "#003366", "#CC9900", "#663333", "#FF6600", "#CC9966", "#999966", "#006606", "#008091", "#041835", "#666666")
+
+theme_estat <- function(...) {
+  theme <- ggplot2::theme_bw() +
+    ggplot2::theme(
+      axis.title.y = ggplot2::element_text(colour = "black", size = 12),
+      axis.title.x = ggplot2::element_text(colour = "black", size = 12),
+      axis.text = ggplot2::element_text(colour = "black", size = 9.5),
+      panel.border = ggplot2::element_blank(),
+      axis.line = ggplot2::element_line(colour = "black"),
+      legend.position = "top",
+      ...
+    )
+  
+  return(
+    list(
+      theme,
+      scale_fill_manual(values = cores_estat),
+      scale_colour_manual(values = cores_estat)
+    )
+  )
+}
+
+vendas <- subset(vendas, select = -Motivo.devolução)
+
+vendas <- vendas %>%
+  left_join(devolução %>% select(Unique.ID, Motivo.devolução), by = "Unique.ID")
+
+vendas <- vendas[!is.na(vendas$Marca), ]
+
+vendas <- vendas %>%
+  group_by(Unique.ID, Motivo.devolução) %>%
+  filter(!duplicated(Unique.ID, Motivo.devolução))
+
+
+
+vendas <- vendas %>%
+  rename(Marca = Brand)
+
+BPOR <- vendas %>%
+  mutate(Marca = case_when(
+    Marca %>% str_detect("Adidas") ~ "Adidas",
+    Marca %>% str_detect("Zara") ~ "Zara",
+    Marca %>% str_detect("Gucci") ~ "Gucci",
+    Marca %>% str_detect("Nike") ~ "Nike",
+    Marca %>% str_detect("H&M") ~ "H&M"
+  )) %>%
+  group_by(Marca, Motivo.devolução) %>%
+  summarise(freq = n()) %>%
+  mutate(
+    freq_relativa = freq / sum(freq),
+    freq_relativa = scales::percent(freq_relativa
+  ))
+
+
+porcentagens <- str_c(BPOR$freq_relativa, "%") %>% str_replace("\\.", ",")
+legendas <- str_squish(str_c(BPOR$freq, " (", porcentagens, ")"))
+
+ggplot(BPOR) +
+  aes(
+    x = fct_reorder(Marca, freq, .desc = T), y = freq,
+    fill = Motivo.devolução, label = freq_relativa
+  ) +
+  geom_col(position = position_dodge2(preserve = "single", padding = 0)) +
+  geom_text(
+    position = position_dodge(width = .9),
+    vjust = -0.5, hjust = 0.5,
+    size = 2
+  ) +
+  labs(x = "Marca", y = "Frequência") +
+  theme_estat()
+ggsave("colunas-bi-freq.pdf", width = 158, height = 93, units = "mm")
+
+
+
+
+
